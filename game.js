@@ -28,14 +28,21 @@ function Gameboard() {
             board[i].push(Cell());
         }
     }
-    
+    const getBoard = () => board;
+    const placeToken = (row,col,player) => {
+        if(board[row][col].getValue === 0) {
+            board[row][col].addToken(player);
+        }
+    }; 
 }
 
 function Cell() {
     let value = 0;
+
     const addToken = (player) => {
         value = player;
     };
+
     const getValue = () => value;
     return { getValue, addToken };
 }
@@ -46,14 +53,15 @@ function Player(name, token) {
     return { getName, getToken };
 }
 
-function Gamecontroller() {
+function Gamecontroller(playerOneName = "Player One", playerTwoName = "Player Two") {
     const board = Gameboard();
     const players = [];
-    players.push(Player("Player One", 1));
-    players.push(Player("Player Two", 2));
+    players.push(Player(playerOneName, 1));
+    players.push(Player(playerTwoName, 2));
     
-    let activePlayer = players[0];
 
+    let activePlayer = players[0];
+    
     const switchPlayersTurn = () => {
         activePlayer = activePlayer === players[0] ? players[1] : players[0];
     };
