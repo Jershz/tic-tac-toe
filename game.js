@@ -15,7 +15,12 @@ Tic-tac-toe:
     B. Create players array
     C. Track active player's turn
     D. Start the round
+    E. Expose controls to start a new game and play a round
 4. UI/Display
+
+    [0 0] [0 1] [0 2]
+    [1 0] [1 1] [1 2]
+    [2 0] [2 1] [2 2]
 */
 
 function Gameboard() {
@@ -33,10 +38,11 @@ function Gameboard() {
         for(let i = 0; i < boardSize; i++) {
             for(let j = 0; j < boardSize; j++) {
                 board[i][j].resetToken();
+            }
         }
     };
-    };
     const getBoard = () => board;
+    const getBoardSize = () => boardSize;
     const placeToken = (row,col,player) => {
         if(board[row][col].getValue() === 0) {
             board[row][col].addToken(player);
@@ -51,8 +57,8 @@ function Gameboard() {
         const boardWithCellValues = board.map(row => row.map(cell => cell.getValue()));
         console.log(boardWithCellValues);
     };
-
-    return { getBoard, placeToken, printBoard, resetBoard };
+    
+    return { getBoard, placeToken, printBoard, resetBoard, getBoardSize };
 }
 
 function Cell() {
@@ -77,9 +83,11 @@ function Player(name, token) {
 function Gamecontroller(playerOneName = "Player One", playerTwoName = "Player Two") {
     const board = Gameboard();
     const players = [];
-    players.push(Player(playerOneName, 1));
-    players.push(Player(playerTwoName, 2));
+    players.push(Player(playerOneName, "X"));
+    players.push(Player(playerTwoName, "O"));
     
+    let activePlayer = players[0];
+
     const switchPlayersTurn = () => {
         activePlayer = activePlayer === players[0] ? players[1] : players[0];
     };
@@ -96,12 +104,93 @@ function Gamecontroller(playerOneName = "Player One", playerTwoName = "Player Tw
     const playRound = (row,col) => {
         console.log(`Placing ${getActivePlayer().getName()}'s token at row:${row} col:${col}`)
         if(board.placeToken(row,col,getActivePlayer().getToken())) {
+            checkForWinner();
             switchPlayersTurn();
         }
         printNewRound();
     };
+    const declareWinner = () => {
+        console.log(`${activePlayer.getName()} wins!!!`);
+        startNewGame();
+    };
+    const checkForWinner = () => {
+        const activePlayerToken = activePlayer.getToken();
+        const boardSize = board.getBoardSize();
+        const filteredBoard = board.getBoard();
+        let threeCount = 0;
+
+        //Check for 3 in a row horizontally
+        filteredBoard.forEach(row => 
+            row.filter(cell => {
+                if(cell.getValue() === activePlayerToken) threeCount++;
+                else threeCount = 0;
+                if(threeCount === 3) declareWinner();
+            }));
+
+        //Check for 3 in a row vertically
+        threeCount = 0;
+        for(let col = 0; col < boardSize; col++) {
+            for(let row = 0; row < boardSize; row++) {
+                if(filteredBoard[row][col].getValue() === activePlayerToken) threeCount++;
+                else threeCount = 0;
+                if(threeCount === 3) declareWinner();
+            }
+        }
+
+        //Check for 3 in a row diagonally
+        if(activePlayerToken === filteredBoard[0][0].getValue() && 
+            filteredBoard[0][0].getValue() === filteredBoard[1][1].getValue() && 
+            filteredBoard[0][0].getValue() === filteredBoard[2][2].getValue()) {
+                declareWinner();
+            }
+        if(activePlayerToken === filteredBoard[2][0].getValue() && 
+            filteredBoard[2][0].getValue() === filteredBoard[1][1].getValue() && 
+            filteredBoard[2][0].getValue() === filteredBoard[0][2].getValue()) {
+                declareWinner();
+            }
+    };
     startNewGame();
-    return { playRound, startNewGame };
+    return { playRound, startNewGame, getActivePlayer, getBoard:board.getBoard };
 }
 
-const game = Gamecontroller();
+function ScreenController() {
+    const game = Gamecontroller();
+    const playerTurnDiv = document.querySelector(".turn");
+    const boardDiv = document.querySelector(".board");
+
+    const updateScreen = () => {
+        boardDiv.textContent = "";
+
+        const board = game.getBoard();
+        const activePlayer = game.getActivePlayer();
+
+        playerTurnDiv.textContent = `${activePlayer.getName()}'s turn...`;
+
+        board.forEach((row,rowIndex) => {
+            row.forEach((cell,colIndex) => {
+                const cellButton = document.createElement("button");
+                cellButton.classList.add("cell");
+                cellButton.dataset.row = rowIndex;
+                cellButton.dataset.col = colIndex;
+                cellButton.textContent = cell.getValue() === 0 ? "" : cell.getValue();
+                boardDiv.appendChild(cellButton);
+            })
+        })
+    };
+
+    function clickHandlerBoard(e) {
+        const selectedColumn = e.target.dataset.col;
+        const selectedRow = e.target.dataset.row;
+
+        if(!selectedColumn || !selectedRow) return;
+        
+        game.playRound(selectedRow,selectedColumn);
+        updateScreen();
+    };
+
+    boardDiv.addEventListener("click", clickHandlerBoard);
+
+    updateScreen();
+}
+
+ScreenController();
