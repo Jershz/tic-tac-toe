@@ -104,13 +104,14 @@ function Gamecontroller(playerOneName = "Player One", playerTwoName = "Player Tw
     const playRound = (row,col) => {
         console.log(`Placing ${getActivePlayer().getName()}'s token at row:${row} col:${col}`)
         if(board.placeToken(row,col,getActivePlayer().getToken())) {
-            checkForWinner();
-            switchPlayersTurn();
+            if(!checkForWinner()) {
+                switchPlayersTurn();
+            }
         }
         printNewRound();
     };
     const declareWinner = () => {
-        console.log(`${activePlayer.getName()} wins!!!`);
+        alert(`${activePlayer.getName()} wins!!!`);
         startNewGame();
     };
     const checkForWinner = () => {
@@ -124,7 +125,10 @@ function Gamecontroller(playerOneName = "Player One", playerTwoName = "Player Tw
             row.filter(cell => {
                 if(cell.getValue() === activePlayerToken) threeCount++;
                 else threeCount = 0;
-                if(threeCount === 3) declareWinner();
+                if(threeCount === 3) {
+                    declareWinner();
+                    return true;
+                }
             }));
 
         //Check for 3 in a row vertically
@@ -133,7 +137,10 @@ function Gamecontroller(playerOneName = "Player One", playerTwoName = "Player Tw
             for(let row = 0; row < boardSize; row++) {
                 if(filteredBoard[row][col].getValue() === activePlayerToken) threeCount++;
                 else threeCount = 0;
-                if(threeCount === 3) declareWinner();
+                if(threeCount === 3) {
+                    declareWinner();
+                    return true;
+                }
             }
         }
 
@@ -142,19 +149,24 @@ function Gamecontroller(playerOneName = "Player One", playerTwoName = "Player Tw
             filteredBoard[0][0].getValue() === filteredBoard[1][1].getValue() && 
             filteredBoard[0][0].getValue() === filteredBoard[2][2].getValue()) {
                 declareWinner();
+                return true;
             }
         if(activePlayerToken === filteredBoard[2][0].getValue() && 
             filteredBoard[2][0].getValue() === filteredBoard[1][1].getValue() && 
             filteredBoard[2][0].getValue() === filteredBoard[0][2].getValue()) {
                 declareWinner();
+                return true;
             }
+        return false;
     };
     startNewGame();
     return { playRound, startNewGame, getActivePlayer, getBoard:board.getBoard };
 }
 
 function ScreenController() {
-    const game = Gamecontroller();
+    const playerOneName = prompt("What's player one's name?", "Player One");
+    const playerTwoName = prompt("What's player two's name?", "Player Two");
+    const game = Gamecontroller(playerOneName, playerTwoName);
     const playerTurnDiv = document.querySelector(".turn");
     const boardDiv = document.querySelector(".board");
 
@@ -183,7 +195,7 @@ function ScreenController() {
         const selectedRow = e.target.dataset.row;
 
         if(!selectedColumn || !selectedRow) return;
-        
+
         game.playRound(selectedRow,selectedColumn);
         updateScreen();
     };
@@ -193,4 +205,12 @@ function ScreenController() {
     updateScreen();
 }
 
-ScreenController();
+const GameHandler = (() => {
+    const startButton = document.querySelector(".start-button");
+
+    function clickHandlerStartButton() {
+        startButton.textContent = "Restart Game";
+        ScreenController();
+    }
+    startButton.addEventListener("click", clickHandlerStartButton);
+})();
